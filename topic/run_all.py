@@ -6,9 +6,9 @@
 # All Rights Reserved
 #
 
-# 
+#
 # Ingest messages from a CSV file, perform normalization, LID, and topic recognition
-# 
+#
 
 # Originally written by BC, 4/2013
 # BC, revised 5/26-5/30/2013 for release
@@ -56,7 +56,7 @@ def print_usage():
     print
     print('INPUT_FILE           input file (see format in documentation)')
     print('OUTPUT_DIR           output directory')
-    print('-r                   (string, default: "Default_ingestion")') 
+    print('-r                   (string, default: "Default_ingestion")')
     print('                     Custom reader for the ingestion phase')
     print('-do_simple_metadata  (boolean: True|False, default: True)')
     print('                     Whether the simple metadata extraction step is performed or not')
@@ -67,10 +67,10 @@ def print_usage():
     print('-num_topics          (int, default: 50)')
     print('                     number of topics used for clustering')
     print('-stop_list           (string, default:topic/data/stop_list_kiva.txt)')
-    print('                     Terms to exclude from topic clustering') 
-    print('-tf_cutoff           (int, default: 3)') 
+    print('                     Terms to exclude from topic clustering')
+    print('-tf_cutoff           (int, default: 3)')
     print('                     Exclude terms that occur this number of times or fewer')
-    print('-df_cutoff           (float, default: 0.25)') 
+    print('-df_cutoff           (float, default: 0.25)')
     print('                     Exclude terms that happen in greater than this fraction of vectors')
     print('-lang_filter         (string, default: "en")')
     print('                     Process only those documents in the specified language for purposes of topic clustering.')
@@ -84,7 +84,7 @@ def process_arguments():
 #    -do_simple_metadata  (boolean: True|False, default: True) whether the simple metadata extraction step is performed or not
 #    -temp                (string, default: temp/) storage location for temp files
 #    -num_topics          (int, default: 50)    number of topics used for clustering
-#    -stop_list           (string, default:topic/data/stop_list_kiva.txt) Terms to exclude from topic clustering 
+#    -stop_list           (string, default:topic/data/stop_list_kiva.txt) Terms to exclude from topic clustering
 #    -tf_cutoff           (int, default: 3) Exclude terms that occur this number of times or fewer
 #    -df_cutoff           (float, default: 0.25) Exclude terms that happen in greater than this fraction of vectors
 #    -do_topic            (boolean: True|False, default: True)
@@ -107,12 +107,12 @@ def process_arguments():
         a_key = args[arg_i]
         #If argument is invalid, prompt the user and exit
         if a_key not in valid_args:
-            print('ERROR: Invalid argument "{}"'.format(a_key)) 
+            print('ERROR: Invalid argument "{}"'.format(a_key))
             sys.exit()
-        
+
         try:
             a_value = args[arg_i + 1]
-            if (a_key == DO_SIMPLE_METADATA_KEY) or (a_key == DO_TOPIC): #Process boolean args 
+            if (a_key == DO_SIMPLE_METADATA_KEY) or (a_key == DO_TOPIC): #Process boolean args
                 if str(a_value).lower() == 'true':
                     a_value = True
                 elif str(a_value).lower() == 'false':
@@ -125,9 +125,9 @@ def process_arguments():
             print('ERROR: Argument without value: "{}"'.format(a_key))
             sys.exit()
     return arg_table
-        
-                
-################# MAIN PROCESSING ############################################################### 
+
+
+################# MAIN PROCESSING ###############################################################
 #Process arguments
 arg_table = process_arguments()
 ######### DEBUGGING ##########
@@ -140,10 +140,10 @@ input_file = arg_table[INPUT_FILE_KEY].strip()
 if not os.path.exists(input_file):
     print('ERROR: File "{}" does not exist.'.format(input_file))
     sys.exit()
-    
+
 if not os.path.isfile(input_file):
     print('ERROR: "{}" is not a file'.format(input_file) )
-    sys.exit()   
+    sys.exit()
 # Extract basename to prefix subsequent output files
 fn_table = os.path.basename(input_file)
 
@@ -152,20 +152,20 @@ output_dir = arg_table[OUTPUT_DIR_KEY].strip()
 if not os.path.exists(output_dir):
     print('ERROR: Directory {} does not exist.'.format(output_dir))
     sys.exit()
-    
+
 if not os.path.isdir(output_dir):
     print('ERROR: {} is not a directory.'.format(output_dir))
-    sys.exit()  
+    sys.exit()
 # Make sure it ends in / for future path concatenation
 if not output_dir.endswith('/'):
     output_dir += '/'
-# Extract args for later use     
+# Extract args for later use
 do_simple_metadata = arg_table.get(DO_SIMPLE_METADATA_KEY, True)
 do_topic = arg_table.get(DO_TOPIC, True)
 dir_temp = arg_table.get(TEMP_DIR_KEY,'tmp/')
 
 # Basic ingest: raw to structured form
-# If input file is a text file (raw data), read the raw input file, using custom or default reader, into a dictionary and dump the dictionary into a 
+# If input file is a text file (raw data), read the raw input file, using custom or default reader, into a dictionary and dump the dictionary into a
 # pickle file. Otherwise skip this step.
 data_table = None
 data_loaded = False
@@ -180,13 +180,13 @@ if (do_ingest):
         reader_file = "Ingest." + arg_table[CUSTOM_READER_KEY]
     else:
         reader_file = DEFAULT_DATA_READER
-    
+
     raw_to_dict = importlib.import_module(reader_file)
     fn_out = output_dir + fn_table + '.basic.pckl' #serialized file goes to: serialized/jounalEntries.csv.basic.pckl
     data_table = mi.read_raw_file(input_file, raw_to_dict.get_fields, debug)
     mt.save_msg(data_table, fn_out)
     data_loaded = True
-        
+
 # Add "simple" metadata to the messages
 simple_loaded = False
 
@@ -223,7 +223,7 @@ if (do_topic):
     tf_cutoff = arg_table.get(TF_CUTOFF_KEY, 3)
     df_cutoff = arg_table.get(DF_CUTOFF_KEY, 0.25)
     language_filter = arg_table.get(LANG_FILTER_KEY,'none')
-    
+
     # Load data if it's not loaded
     if (not simple_loaded):
         if not input_file.endswith(SIMPLE_META_EXTENSION):
@@ -242,7 +242,7 @@ if (do_topic):
             sys.stdout.flush()
         xact = data_table[ky]
         if ((language_filter != 'none') and (xact['lid_lui'] != language_filter)):  # do topic only for docs that match language filter
-			print('Not processing transaction {}'.format(xact))
+            print('Not processing transaction {}'.format(xact))
             continue
         # Topic normalization
         topic_norm.normalize_msg(xact, rw_hash, debug)
@@ -253,11 +253,11 @@ if (do_topic):
 
     # Write out counts to a file and perform topic clustering
     fn_counts = dir_temp + fn_table + '.{}.counts.txt'.format(num_topics)
-    
+
     if (os.path.exists(fn_counts)):
         os.remove(fn_counts)
     mt.write_counts_file(data_table, fn_counts)
-    
+
     # Run topic clustering binary
     fn_feat = dir_temp + fn_table + '.{}.feat.txt'.format(num_topics)
     fn_model = dir_temp + fn_table + '.{}.plsa'.format(num_topics)
@@ -282,7 +282,7 @@ if (do_topic):
               '-d2z {}'.format(fn_d2z)
         print('Running command: {}'.format(cmd))
         status = os.system(cmd)
-        
+
         # open d2z file and prepend id to each line
         d2z_file = open(fn_d2z, 'r')
         fn_d2z_tmp = fn_d2z + ".tmp"
